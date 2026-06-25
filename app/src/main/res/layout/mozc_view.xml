@@ -109,7 +109,8 @@ MozcView(Frame)
             android:layout_width="fill_parent"
             android:layout_height="@dimen/ime_window_height"
             android:gravity="bottom"
-            android:layout_weight="0" >
+            android:layout_weight="0"
+            android:fitsSystemWindows="true" >
 
             <View
                 android:id="@+id/bottom_background"
