@@ -784,9 +784,10 @@ public void setInsets(int contentViewWidth, int contentViewHeight, Insets outIns
             android.view.WindowInsets.Type.navigationBars()).bottom;
       }
     }
+    int visibleHeight = getVisibleViewHeight() + navigationBarHeight;
     if (!isFloatingMode()) {
       outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_CONTENT;
-      outInsets.contentTopInsets = contentViewHeight - getVisibleViewHeight() - navigationBarHeight;
+      outInsets.contentTopInsets = contentViewHeight - visibleHeight;
       outInsets.visibleTopInsets = outInsets.contentTopInsets;
       return;
     }
@@ -795,11 +796,11 @@ public void setInsets(int contentViewWidth, int contentViewHeight, Insets outIns
     int left = layoutAdjustment == LayoutAdjustment.RIGHT ? (contentViewWidth - width) : 0;
     outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_REGION;
     outInsets.touchableRegion.set(
-        left, contentViewHeight - height - navigationBarHeight,
-        left + width, contentViewHeight - navigationBarHeight);
+        left, contentViewHeight - visibleHeight, left + width, contentViewHeight);
     outInsets.contentTopInsets = contentViewHeight;
     outInsets.visibleTopInsets = contentViewHeight;
-    return;}
+    return;
+}
 
   @VisibleForTesting
   void changeBottomBackgroundHeight(int targetHeight) {
