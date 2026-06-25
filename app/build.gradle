@@ -33,5 +33,6 @@ dependencies {
     implementation files('libs/guava.jar')
     implementation files('libs/jsr305.jar')
     implementation files('libs/protobuf-java.jar')
-    implementation 'androidx.core:core:1.13.1'
-}
+    implementation ('androidx.core:core:1.13.1') {
+        exclude group: 'com.google.guava', module: 'listenablefuture'
+    }
