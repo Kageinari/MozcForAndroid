@@ -789,8 +789,25 @@ public class MozcBaseService extends InputMethodService {
   public View onCreateInputView() {
     MozcLog.d("start MozcService#onCreateInputView " + System.nanoTime());
     View inputView = viewManager.createMozcView(this);
+    applyEdgeToEdgeInsets(inputView);
     MozcLog.d("end MozcService#onCreateInputView " + System.nanoTime());
     return inputView;
+  }
+
+  private void applyEdgeToEdgeInsets(View inputView) {
+    if (inputView == null) return;
+    androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(inputView,
+        (v, windowInsets) -> {
+          androidx.core.graphics.Insets navInsets = windowInsets.getInsets(
+              androidx.core.view.WindowInsetsCompat.Type.navigationBars());
+          v.setPadding(
+              v.getPaddingLeft(),
+              v.getPaddingTop(),
+              v.getPaddingRight(),
+              navInsets.bottom);
+          return windowInsets;
+        });
+    androidx.core.view.ViewCompat.requestApplyInsets(inputView);
   }
 
   private void resetContext() {
