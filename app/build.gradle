@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    compileSdk 34        // 25 → 34
+    compileSdk 36
     defaultConfig {
         applicationId "org.mozc.android.inputmethod.japanese"
         minSdk 22
-        targetSdk 34     // 25 → 34
+        targetSdk 36
     }
 
     buildTypes {
