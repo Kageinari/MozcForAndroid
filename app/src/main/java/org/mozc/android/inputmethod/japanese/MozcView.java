@@ -790,6 +790,7 @@ public class MozcView extends FrameLayout implements MemoryManageable {
     outInsets.contentTopInsets = contentViewHeight;
     outInsets.visibleTopInsets = contentViewHeight;
     return;
+  }
 
   @VisibleForTesting
   void changeBottomBackgroundHeight(int targetHeight) {
