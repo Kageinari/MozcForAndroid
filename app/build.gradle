@@ -3,12 +3,11 @@ plugins {
 }
 
 android {
-    compileSdk 25
-
+    compileSdk 34        // 25 → 34
     defaultConfig {
         applicationId "org.mozc.android.inputmethod.japanese"
         minSdk 22
-        targetSdk 25
+        targetSdk 34     // 25 → 34
     }
 
     buildTypes {
@@ -18,8 +17,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17   // 1.8 → 17
+        targetCompatibility JavaVersion.VERSION_17   // 1.8 → 17
     }
     lintOptions {
         abortOnError false
