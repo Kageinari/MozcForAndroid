@@ -214,7 +214,7 @@ public class FloatingCandidateView extends View {
         return;
       }
 
-      int saveId = canvas.save(Canvas.MATRIX_SAVE_FLAG);
+      int saveId = canvas.save();
       try {
         canvas.translate(offsetX, offsetY);
         layoutRenderer.draw(canvas);
