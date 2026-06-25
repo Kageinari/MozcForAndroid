@@ -1029,6 +1029,11 @@ public class ViewManager implements ViewManagerInterface {
       }
     }
     int adjustedHeight = contentViewHeight - navigationBarHeight - statusBarHeight;
+    android.util.Log.d("MozcInsets2",
+        "contentViewHeight=" + contentViewHeight
+        + " statusBarHeight=" + statusBarHeight
+        + " navigationBarHeight=" + navigationBarHeight
+        + " adjustedHeight=" + adjustedHeight);
 
     if (mozcView == null) {
       outInsets.touchableInsets = InputMethodService.Insets.TOUCHABLE_INSETS_CONTENT;
