@@ -36,3 +36,4 @@ dependencies {
     implementation ('androidx.core:core:1.13.1') {
         exclude group: 'com.google.guava', module: 'listenablefuture'
     }
+}
