@@ -774,8 +774,7 @@ public class MozcView extends FrameLayout implements MemoryManageable {
   /**
    * This function is called to compute insets.
    */
-public void setInsets(int contentViewWidth, int contentViewHeight, Insets outInsets) {
-    // Get navigation bar height for Edge-to-Edge (API 36+)
+  public void setInsets(int contentViewWidth, int contentViewHeight, Insets outInsets) {
     int navigationBarHeight = 0;
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
       android.view.WindowInsets windowInsets = getRootWindowInsets();
@@ -791,6 +790,11 @@ public void setInsets(int contentViewWidth, int contentViewHeight, Insets outIns
         + " getVisibleViewHeight=" + getVisibleViewHeight()
         + " navigationBarHeight=" + navigationBarHeight
         + " contentTopInsets=" + (contentViewHeight - visibleHeight));
+    if (!isFloatingMode()) {
+      outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_CONTENT;
+      outInsets.contentTopInsets = contentViewHeight - visibleHeight;
+      outInsets.visibleTopInsets = outInsets.contentTopInsets;
+      return;
     }
     int height = getVisibleViewHeight();
     int width = getSideAdjustedWidth();
@@ -801,7 +805,7 @@ public void setInsets(int contentViewWidth, int contentViewHeight, Insets outIns
     outInsets.contentTopInsets = contentViewHeight;
     outInsets.visibleTopInsets = contentViewHeight;
     return;
-}
+  }
 
   @VisibleForTesting
   void changeBottomBackgroundHeight(int targetHeight) {
