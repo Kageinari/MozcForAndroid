@@ -785,11 +785,12 @@ public void setInsets(int contentViewWidth, int contentViewHeight, Insets outIns
       }
     }
     int visibleHeight = getVisibleViewHeight() + navigationBarHeight;
-    if (!isFloatingMode()) {
-      outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_CONTENT;
-      outInsets.contentTopInsets = contentViewHeight - visibleHeight;
-      outInsets.visibleTopInsets = outInsets.contentTopInsets;
-      return;
+    android.util.Log.d("MozcInsets",
+        "contentViewHeight=" + contentViewHeight
+        + " visibleHeight=" + visibleHeight
+        + " getVisibleViewHeight=" + getVisibleViewHeight()
+        + " navigationBarHeight=" + navigationBarHeight
+        + " contentTopInsets=" + (contentViewHeight - visibleHeight));
     }
     int height = getVisibleViewHeight();
     int width = getSideAdjustedWidth();
