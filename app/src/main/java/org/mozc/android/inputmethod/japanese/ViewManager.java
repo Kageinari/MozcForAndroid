@@ -1028,21 +1028,14 @@ public class ViewManager implements ViewManagerInterface {
         statusBarHeight = statusInsets.top;
       }
     }
-    int adjustedHeight = contentViewHeight - navigationBarHeight - statusBarHeight;
     if (mozcView == null) {
       outInsets.touchableInsets = InputMethodService.Insets.TOUCHABLE_INSETS_CONTENT;
-      outInsets.contentTopInsets = adjustedHeight
+      outInsets.contentTopInsets = contentViewHeight - navigationBarHeight
           - context.getResources().getDimensionPixelSize(R.dimen.input_frame_height);
       outInsets.visibleTopInsets = outInsets.contentTopInsets;
       return;
     }
-    int mozcViewHeight = mozcView.getHeight();
-    android.util.Log.d("MozcInsets2",
-        "contentViewHeight=" + contentViewHeight
-        + " mozcViewHeight=" + mozcViewHeight
-        + " adjustedHeight=" + adjustedHeight
-        + " navigationBarHeight=" + navigationBarHeight);
-    mozcView.setInsets(contentViewWidth, mozcViewHeight > 0 ? mozcViewHeight : adjustedHeight, outInsets);
+    mozcView.setInsets(contentViewWidth, contentViewHeight, outInsets, navigationBarHeight);
   }
 
   @Override
