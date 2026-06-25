@@ -1028,7 +1028,14 @@ public class ViewManager implements ViewManagerInterface {
         statusBarHeight = statusInsets.top;
       }
     }
-    // Use mozcView's actual height instead of full screen contentViewHeight
+    int adjustedHeight = contentViewHeight - navigationBarHeight - statusBarHeight;
+    if (mozcView == null) {
+      outInsets.touchableInsets = InputMethodService.Insets.TOUCHABLE_INSETS_CONTENT;
+      outInsets.contentTopInsets = adjustedHeight
+          - context.getResources().getDimensionPixelSize(R.dimen.input_frame_height);
+      outInsets.visibleTopInsets = outInsets.contentTopInsets;
+      return;
+    }
     int mozcViewHeight = mozcView.getHeight();
     android.util.Log.d("MozcInsets2",
         "contentViewHeight=" + contentViewHeight
