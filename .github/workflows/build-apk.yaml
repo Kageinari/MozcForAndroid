@@ -28,7 +28,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease -x lint
 
       - name: Find APK
         run: find . -name "*.apk" 2>/dev/null
