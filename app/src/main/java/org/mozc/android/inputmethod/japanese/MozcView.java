@@ -775,27 +775,22 @@ public class MozcView extends FrameLayout implements MemoryManageable {
    * This function is called to compute insets.
    */
   public void setInsets(int contentViewWidth, int contentViewHeight, Insets outInsets) {
-    int navigationBarHeight = 0;
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-      android.view.WindowInsets windowInsets = getRootWindowInsets();
-      if (windowInsets != null) {
-        navigationBarHeight = windowInsets.getInsets(
-            android.view.WindowInsets.Type.navigationBars()).bottom;
-      }
-    }
-    int visibleHeight = getVisibleViewHeight() + navigationBarHeight;
-    android.util.Log.d("MozcInsets",
-        "contentViewHeight=" + contentViewHeight
-        + " visibleHeight=" + visibleHeight
-        + " getVisibleViewHeight=" + getVisibleViewHeight()
-        + " navigationBarHeight=" + navigationBarHeight
-        + " contentTopInsets=" + (contentViewHeight - visibleHeight));
     if (!isFloatingMode()) {
       outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_CONTENT;
-      outInsets.contentTopInsets = contentViewHeight - visibleHeight;
+      outInsets.contentTopInsets = contentViewHeight - getVisibleViewHeight();
       outInsets.visibleTopInsets = outInsets.contentTopInsets;
       return;
     }
+    int height = getVisibleViewHeight();
+    int width = getSideAdjustedWidth();
+    int left = layoutAdjustment == LayoutAdjustment.RIGHT ? (contentViewWidth - width) : 0;
+    outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_REGION;
+    outInsets.touchableRegion.set(
+        left, contentViewHeight - height, left + width, contentViewHeight);
+    outInsets.contentTopInsets = contentViewHeight;
+    outInsets.visibleTopInsets = contentViewHeight;
+    return;
+  }
     int height = getVisibleViewHeight();
     int width = getSideAdjustedWidth();
     int left = layoutAdjustment == LayoutAdjustment.RIGHT ? (contentViewWidth - width) : 0;
