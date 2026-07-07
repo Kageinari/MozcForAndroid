@@ -36,4 +36,18 @@ scripts/fetch_native_libs.sh install --zip /path/to/native_libs.zip
 ```
 
 署名付き APK は [GitHub Actions](https://github.com/Kageinari/MozcForAndroid/actions) の `MozcForAndroid-apk` アーティファクトから取得してください。
-CI で artifact 取得に失敗する場合は、リポジトリ Secrets に `MOZC_ARTIFACT_TOKEN`（`repo` 権限の PAT）を設定してください。
+
+### CI: `MOZC_ARTIFACT_TOKEN` の設定
+
+[build-apk.yaml](.github/workflows/build-apk.yaml) は `Kageinari/mozc` の Actions artifact（`native_libs.zip`）を curl で取得します。デフォルトの `GITHUB_TOKEN` は **このリポジトリ専用** のため、別リポジトリの artifact には使えません。初回セットアップ時に次の Secret を登録してください。
+
+1. **PAT を作成**（[GitHub → Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens)）
+   - **Classic PAT** の場合: `repo` スコープにチェック（公開リポジトリの artifact 取得に必要）
+   - **Fine-grained PAT** の場合: リポジトリに `Kageinari/mozc` を指定し、**Actions: Read-only** を付与
+2. **Secret を登録**（[MozcForAndroid → Settings → Secrets and variables → Actions](https://github.com/Kageinari/MozcForAndroid/settings/secrets/actions)）
+   - **New repository secret**
+   - Name: `MOZC_ARTIFACT_TOKEN`
+   - Secret: 手順 1 で作成した PAT
+3. **CI を再実行** — 失敗した workflow run を **Re-run all jobs** するか、`main` に push して確認
+
+ローカルで `scripts/fetch_native_libs.sh install --artifact` を使う場合も、同じ PAT を `export GH_TOKEN=...` で渡してください。
