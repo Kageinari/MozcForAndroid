@@ -20,4 +20,20 @@ Mozc for Android バージョン 2.23.2815.103-arm64 をベースにしてキー
 * 絵文字等のシンボル入力は「左上→右下」のストローク
 * オプションメニュー表示は「左下→右上→左下」のストローク
 
-ビルド済みバイナリはこちら→[apkファイル](./MozcForAndroid.apk)
+## ビルド
+
+`libmozc.so` はリポジトリに含めません（[Kageinari/mozc](https://github.com/Kageinari/mozc) の CI 成果物 `native_libs.zip` から取得）。
+
+```bash
+# gh 認証済みの場合（推奨）
+export GH_TOKEN=...   # mozc リポジトリの Actions artifact 読み取り権限
+scripts/fetch_native_libs.sh install --artifact
+
+# 手元に native_libs.zip がある場合
+scripts/fetch_native_libs.sh install --zip /path/to/native_libs.zip
+
+./gradlew assembleRelease -x lint
+```
+
+署名付き APK は [GitHub Actions](https://github.com/Kageinari/MozcForAndroid/actions) の `MozcForAndroid-apk` アーティファクトから取得してください。
+CI で artifact 取得に失敗する場合は、リポジトリ Secrets に `MOZC_ARTIFACT_TOKEN`（`repo` 権限の PAT）を設定してください。

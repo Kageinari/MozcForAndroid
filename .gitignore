@@ -17,3 +17,9 @@ local.properties
 # Editor backups (e.g. nano)
 *.save
 *.save.*
+
+# Prebuilt binaries (fetch via scripts/fetch_native_libs.sh or CI artifacts)
+/MozcForAndroid.apk
+*.apk
+**/*.so
+**/*.so.TOC

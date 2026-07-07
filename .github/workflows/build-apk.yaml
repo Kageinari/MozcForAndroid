@@ -30,6 +30,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Fetch libmozc.so
+        env:
+          GH_TOKEN: ${{ secrets.MOZC_ARTIFACT_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/fetch_native_libs.sh
+          scripts/fetch_native_libs.sh install --artifact
+
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest -x lint
 
@@ -53,6 +60,13 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
+      - name: Fetch libmozc.so
+        env:
+          GH_TOKEN: ${{ secrets.MOZC_ARTIFACT_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/fetch_native_libs.sh
+          scripts/fetch_native_libs.sh install --artifact
 
       - name: Build Release APK
         run: ./gradlew assembleRelease -x lint
