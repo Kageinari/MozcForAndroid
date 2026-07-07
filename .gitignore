@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Editor backups (e.g. nano)
+*.save
+*.save.*
