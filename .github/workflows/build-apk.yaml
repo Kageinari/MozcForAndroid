@@ -4,11 +4,38 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest -x lint
+
   build:
     runs-on: ubuntu-24.04
+    needs: test
     timeout-minutes: 30
 
     steps:
@@ -30,11 +57,8 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease -x lint
 
-      - name: Find APK
-        run: find . -name "*.apk" 2>/dev/null
-
       - name: Sign APK
-        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -42,15 +66,19 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > /tmp/mozc-release.keystore
-          UNSIGNED_APK=$(find . -name "*release-unsigned*.apk" | head -1)
-          BUILD_TOOLS=$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
-          $BUILD_TOOLS/apksigner sign \
+          UNSIGNED_APK=$(find app/build/outputs/apk/release -name "*-unsigned.apk" 2>/dev/null | head -1)
+          if [ -z "$UNSIGNED_APK" ]; then
+            echo "No unsigned APK found under app/build/outputs/apk/release"
+            exit 1
+          fi
+          BUILD_TOOLS=$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          "$BUILD_TOOLS/apksigner" sign \
             --ks /tmp/mozc-release.keystore \
-            --ks-pass pass:$ANDROID_KEYSTORE_PASSWORD \
-            --ks-key-alias $ANDROID_KEY_ALIAS \
-            --key-pass pass:$ANDROID_KEY_PASSWORD \
+            --ks-pass "pass:$ANDROID_KEYSTORE_PASSWORD" \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" \
+            --key-pass "pass:$ANDROID_KEY_PASSWORD" \
             --out app/build/outputs/apk/release/MozcForAndroid-signed.apk \
-            $UNSIGNED_APK
+            "$UNSIGNED_APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -59,4 +87,4 @@ jobs:
           path: |
             app/build/outputs/apk/release/MozcForAndroid-signed.apk
             app/build/outputs/apk/release/*-unsigned.apk
-          if-no-files-found: warn
+          if-no-files-found: error
