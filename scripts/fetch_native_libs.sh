@@ -190,10 +190,10 @@ download_artifact() {
   fi
 
   tmp_zip="$(mktemp /tmp/native_libs.XXXXXX.zip)"
-  trap 'rm -f "$tmp_zip"' RETURN
   if ! gh_api_download \
     "${GH_API}/repos/${MOZC_REPO}/actions/artifacts/${artifact_id}/zip" \
     "$tmp_zip"; then
+    rm -f "$tmp_zip"
     echo "ERROR: failed to download ${MOZC_ARTIFACT} from ${MOZC_REPO} (run ${run_id})" >&2
     echo "Check GH_TOKEN has read access to ${MOZC_REPO} Actions artifacts." >&2
     exit 1
@@ -201,6 +201,7 @@ download_artifact() {
 
   echo "Downloaded ${MOZC_ARTIFACT} from ${MOZC_REPO} run ${run_id}"
   install_from_zip "$tmp_zip"
+  rm -f "$tmp_zip"
 }
 
 cmd_install() {
