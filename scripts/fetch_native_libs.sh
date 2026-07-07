@@ -109,6 +109,41 @@ for artifact in data.get("artifacts", []):
 ' "$MOZC_ARTIFACT"
 }
 
+extract_libmozc_so() {
+  local zip_path="$1"
+  python3 - "$zip_path" "$MOZC_ARTIFACT" <<'PY'
+import io
+import sys
+import zipfile
+
+zip_path = sys.argv[1]
+artifact_name = sys.argv[2]
+so_path = "libs/arm64-v8a/libmozc.so"
+
+
+def read_so(archive: zipfile.ZipFile) -> bytes:
+    if so_path in archive.namelist():
+        return archive.read(so_path)
+    for name in archive.namelist():
+        if name.rstrip("/").rsplit("/", 1)[-1] == artifact_name:
+            with zipfile.ZipFile(io.BytesIO(archive.read(name))) as inner:
+                if so_path not in inner.namelist():
+                    raise KeyError(so_path)
+                return inner.read(so_path)
+    raise KeyError(so_path)
+
+
+try:
+    with zipfile.ZipFile(zip_path) as archive:
+        data = read_so(archive)
+except (KeyError, zipfile.BadZipFile) as exc:
+    print(f"ERROR: {so_path} not found in {zip_path} (or nested {artifact_name}): {exc}", file=sys.stderr)
+    raise SystemExit(1) from exc
+
+sys.stdout.buffer.write(data)
+PY
+}
+
 install_from_zip() {
   local zip_path="$1"
   if [[ ! -f "$zip_path" ]]; then
@@ -116,7 +151,7 @@ install_from_zip() {
     exit 1
   fi
   mkdir -p "$JNI_ARM64"
-  unzip -p "$zip_path" "libs/arm64-v8a/libmozc.so" > "$TARGET_SO"
+  extract_libmozc_so "$zip_path" > "$TARGET_SO"
   chmod 644 "$TARGET_SO"
   echo "Installed $(wc -c < "$TARGET_SO") bytes to $TARGET_SO"
 }
