@@ -25,7 +25,7 @@ Mozc for Android バージョン 2.23.2815.103-arm64 をベースにしてキー
 `libmozc.so` はリポジトリに含めません（[Kageinari/mozc](https://github.com/Kageinari/mozc) の CI 成果物 `native_libs.zip` から取得）。
 
 ```bash
-# gh 認証済みの場合（推奨）
+# GitHub API (curl) で artifact 取得（推奨）
 export GH_TOKEN=...   # mozc リポジトリの Actions artifact 読み取り権限
 scripts/fetch_native_libs.sh install --artifact
 

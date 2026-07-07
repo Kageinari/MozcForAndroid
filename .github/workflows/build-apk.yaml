@@ -32,8 +32,12 @@ jobs:
 
       - name: Fetch libmozc.so
         env:
-          GH_TOKEN: ${{ secrets.MOZC_ARTIFACT_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.MOZC_ARTIFACT_TOKEN }}
         run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "MOZC_ARTIFACT_TOKEN secret is required to download artifacts from Kageinari/mozc"
+            exit 1
+          fi
           chmod +x scripts/fetch_native_libs.sh
           scripts/fetch_native_libs.sh install --artifact
 
@@ -63,8 +67,12 @@ jobs:
 
       - name: Fetch libmozc.so
         env:
-          GH_TOKEN: ${{ secrets.MOZC_ARTIFACT_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.MOZC_ARTIFACT_TOKEN }}
         run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "MOZC_ARTIFACT_TOKEN secret is required to download artifacts from Kageinari/mozc"
+            exit 1
+          fi
           chmod +x scripts/fetch_native_libs.sh
           scripts/fetch_native_libs.sh install --artifact
 

@@ -11,6 +11,7 @@ source "$SCRIPT_DIR/mozc_native.env"
 
 JNI_ARM64="${REPO_ROOT}/app/src/main/jniLibs/arm64-v8a"
 TARGET_SO="${JNI_ARM64}/libmozc.so"
+GH_API="https://api.github.com"
 
 usage() {
   cat <<EOF
@@ -22,14 +23,90 @@ Commands:
 
 Options (install):
   --zip PATH    Extract from a local native_libs.zip
-  --artifact    Download native_libs.zip from mozc GitHub Actions (needs gh + GH_TOKEN)
+  --artifact    Download native_libs.zip from mozc GitHub Actions (needs curl + GH_TOKEN)
   --force       Reinstall even when libmozc.so already exists
 
 Environment:
   NATIVE_LIBS_ZIP   Path to native_libs.zip (same as --zip)
-  GH_TOKEN            GitHub token with access to ${MOZC_REPO} artifacts
-  MOZC_REPO / MOZC_REF / MOZC_WORKFLOW / MOZC_ARTIFACT  (see mozc_native.env)
+  GH_TOKEN          GitHub token with access to ${MOZC_REPO} artifacts
+  MOZC_REPO / MOZC_REF / MOZC_WORKFLOW / MOZC_ARTIFACT / MOZC_NATIVE_RUN_ID
+                    (see mozc_native.env)
 EOF
+}
+
+require_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "ERROR: $1 is required for --artifact" >&2
+    exit 1
+  fi
+}
+
+gh_api_get() {
+  local url="$1"
+  curl -fsSL \
+    -H "Accept: application/vnd.github+json" \
+    -H "Authorization: Bearer ${GH_TOKEN}" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "$url"
+}
+
+gh_api_download() {
+  local url="$1"
+  local dest="$2"
+  curl -fsSL \
+    -H "Accept: application/vnd.github+json" \
+    -H "Authorization: Bearer ${GH_TOKEN}" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    -o "$dest" \
+    "$url"
+}
+
+resolve_run_id() {
+  if [[ -n "${MOZC_NATIVE_RUN_ID:-}" ]]; then
+    echo "$MOZC_NATIVE_RUN_ID"
+    return 0
+  fi
+
+  local workflow="${MOZC_WORKFLOW_ID:-$MOZC_WORKFLOW}"
+  local runs_json
+  runs_json="$(
+    gh_api_get \
+      "${GH_API}/repos/${MOZC_REPO}/actions/workflows/${workflow}/runs?branch=master&status=completed&per_page=30"
+  )"
+
+  printf '%s' "$runs_json" | python3 -c '
+import json
+import sys
+
+ref = sys.argv[1]
+data = json.load(sys.stdin)
+for run in data.get("workflow_runs", []):
+    if run.get("conclusion") != "success":
+        continue
+    head_sha = run.get("head_sha", "")
+    if ref and head_sha != ref:
+        continue
+    print(run["id"])
+    break
+' "$MOZC_REF"
+}
+
+resolve_artifact_id() {
+  local run_id="$1"
+  local artifacts_json
+  artifacts_json="$(gh_api_get "${GH_API}/repos/${MOZC_REPO}/actions/runs/${run_id}/artifacts")"
+
+  printf '%s' "$artifacts_json" | python3 -c '
+import json
+import sys
+
+artifact_name = sys.argv[1]
+data = json.load(sys.stdin)
+for artifact in data.get("artifacts", []):
+    if artifact.get("name") == artifact_name and not artifact.get("expired", False):
+        print(artifact["id"])
+        break
+' "$MOZC_ARTIFACT"
 }
 
 install_from_zip() {
@@ -45,42 +122,48 @@ install_from_zip() {
 }
 
 download_artifact() {
-  if ! command -v gh >/dev/null 2>&1; then
-    echo "ERROR: gh CLI is required for --artifact" >&2
-    exit 1
-  fi
+  require_cmd curl
+  require_cmd python3
+  require_cmd unzip
+
   if [[ -z "${GH_TOKEN:-}" ]]; then
     echo "ERROR: GH_TOKEN is required to download artifacts from ${MOZC_REPO}" >&2
+    echo "Set MOZC_ARTIFACT_TOKEN in repository secrets (CI) or export GH_TOKEN locally." >&2
     exit 1
   fi
 
-  local run_id
-  run_id="$(
-    gh api "repos/${MOZC_REPO}/actions/workflows/${MOZC_WORKFLOW}/runs" \
-      -f branch=master -f status=completed -f per_page=20 \
-      --jq '.workflow_runs[] | select(.conclusion=="success") | .id' \
-      | head -1
-  )"
+  local run_id artifact_id tmp_zip
+  if ! run_id="$(resolve_run_id)"; then
+    echo "ERROR: failed to query workflow runs for ${MOZC_REPO}" >&2
+    exit 1
+  fi
   if [[ -z "$run_id" ]]; then
     echo "ERROR: no successful ${MOZC_WORKFLOW} run found on ${MOZC_REPO}" >&2
+    if [[ -n "${MOZC_REF:-}" ]]; then
+      echo "Expected head_sha=${MOZC_REF}. Update MOZC_NATIVE_RUN_ID in mozc_native.env." >&2
+    fi
     exit 1
   fi
 
-  local artifact_id
-  artifact_id="$(
-    gh api "repos/${MOZC_REPO}/actions/runs/${run_id}/artifacts" \
-      --jq ".artifacts[] | select(.name==\"${MOZC_ARTIFACT}\") | .id" \
-      | head -1
-  )"
+  if ! artifact_id="$(resolve_artifact_id "$run_id")"; then
+    echo "ERROR: failed to list artifacts for run ${run_id}" >&2
+    exit 1
+  fi
   if [[ -z "$artifact_id" ]]; then
     echo "ERROR: artifact ${MOZC_ARTIFACT} not found in run ${run_id}" >&2
     exit 1
   fi
 
-  local tmp_zip
   tmp_zip="$(mktemp /tmp/native_libs.XXXXXX.zip)"
   trap 'rm -f "$tmp_zip"' RETURN
-  gh api "repos/${MOZC_REPO}/actions/artifacts/${artifact_id}/zip" > "$tmp_zip"
+  if ! gh_api_download \
+    "${GH_API}/repos/${MOZC_REPO}/actions/artifacts/${artifact_id}/zip" \
+    "$tmp_zip"; then
+    echo "ERROR: failed to download ${MOZC_ARTIFACT} from ${MOZC_REPO} (run ${run_id})" >&2
+    echo "Check GH_TOKEN has read access to ${MOZC_REPO} Actions artifacts." >&2
+    exit 1
+  fi
+
   echo "Downloaded ${MOZC_ARTIFACT} from ${MOZC_REPO} run ${run_id}"
   install_from_zip "$tmp_zip"
 }
