@@ -11,6 +11,8 @@ source "$SCRIPT_DIR/mozc_native.env"
 
 JNI_ARM64="${REPO_ROOT}/app/src/main/jniLibs/arm64-v8a"
 TARGET_SO="${JNI_ARM64}/libmozc.so"
+ASSETS_DIR="${REPO_ROOT}/app/src/main/assets"
+TARGET_DATA="${ASSETS_DIR}/mozc.data"
 GH_API="https://api.github.com"
 
 usage() {
@@ -18,8 +20,8 @@ usage() {
 Usage: $(basename "$0") <command> [options]
 
 Commands:
-  install       Install libmozc.so into jniLibs (default if no command given)
-  verify        Exit 0 when libmozc.so exists
+  install       Install libmozc.so and mozc.data (default if no command given)
+  verify        Exit 0 when libmozc.so and mozc.data exist
 
 Options (install):
   --zip PATH    Extract from a local native_libs.zip
@@ -109,38 +111,57 @@ for artifact in data.get("artifacts", []):
 ' "$MOZC_ARTIFACT"
 }
 
-extract_libmozc_so() {
+extract_native_artifacts() {
   local zip_path="$1"
-  python3 - "$zip_path" "$MOZC_ARTIFACT" <<'PY'
+  python3 - "$zip_path" "$MOZC_ARTIFACT" "$TARGET_SO" "$TARGET_DATA" <<'PY'
 import io
+import pathlib
 import sys
 import zipfile
 
 zip_path = sys.argv[1]
 artifact_name = sys.argv[2]
+target_so = pathlib.Path(sys.argv[3])
+target_data = pathlib.Path(sys.argv[4])
 so_path = "libs/arm64-v8a/libmozc.so"
+data_path = "data/mozc.data"
 
 
-def read_so(archive: zipfile.ZipFile) -> bytes:
+def open_native_archive(path: str) -> zipfile.ZipFile:
+    archive = zipfile.ZipFile(path)
     if so_path in archive.namelist():
-        return archive.read(so_path)
+        return archive
     for name in archive.namelist():
         if name.rstrip("/").rsplit("/", 1)[-1] == artifact_name:
-            with zipfile.ZipFile(io.BytesIO(archive.read(name))) as inner:
-                if so_path not in inner.namelist():
-                    raise KeyError(so_path)
-                return inner.read(so_path)
+            return zipfile.ZipFile(io.BytesIO(archive.read(name)))
     raise KeyError(so_path)
 
 
+def install_member(archive: zipfile.ZipFile, member: str, dest: pathlib.Path) -> None:
+    if member not in archive.namelist():
+        raise KeyError(member)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(archive.read(member))
+
+
 try:
-    with zipfile.ZipFile(zip_path) as archive:
-        data = read_so(archive)
+    with open_native_archive(zip_path) as archive:
+        install_member(archive, so_path, target_so)
+        try:
+            install_member(archive, data_path, target_data)
+        except KeyError:
+            if target_data.exists():
+                target_data.unlink()
+            print(f"WARNING: {data_path} not found in {zip_path}; mozc.data was not installed",
+                  file=sys.stderr)
 except (KeyError, zipfile.BadZipFile) as exc:
-    print(f"ERROR: {so_path} not found in {zip_path} (or nested {artifact_name}): {exc}", file=sys.stderr)
+    print(f"ERROR: native artifacts not found in {zip_path} (or nested {artifact_name}): {exc}",
+          file=sys.stderr)
     raise SystemExit(1) from exc
 
-sys.stdout.buffer.write(data)
+print(f"Installed {target_so.stat().st_size} bytes to {target_so}")
+if target_data.exists():
+    print(f"Installed {target_data.stat().st_size} bytes to {target_data}")
 PY
 }
 
@@ -150,10 +171,11 @@ install_from_zip() {
     echo "ERROR: zip not found: $zip_path" >&2
     exit 1
   fi
-  mkdir -p "$JNI_ARM64"
-  extract_libmozc_so "$zip_path" > "$TARGET_SO"
+  extract_native_artifacts "$zip_path"
   chmod 644 "$TARGET_SO"
-  echo "Installed $(wc -c < "$TARGET_SO") bytes to $TARGET_SO"
+  if [[ -f "$TARGET_DATA" ]]; then
+    chmod 644 "$TARGET_DATA"
+  fi
 }
 
 download_artifact() {
@@ -230,8 +252,8 @@ cmd_install() {
     esac
   done
 
-  if [[ $force -eq 0 && -f "$TARGET_SO" ]]; then
-    echo "libmozc.so already present at $TARGET_SO"
+  if [[ $force -eq 0 && -f "$TARGET_SO" && -f "$TARGET_DATA" ]]; then
+    echo "libmozc.so and mozc.data already present"
     exit 0
   fi
 
@@ -247,11 +269,23 @@ cmd_install() {
 }
 
 cmd_verify() {
+  local ok=1
   if [[ -f "$TARGET_SO" ]]; then
     echo "OK: $TARGET_SO"
+  else
+    echo "ERROR: missing $TARGET_SO" >&2
+    ok=0
+  fi
+  if [[ -f "$TARGET_DATA" ]]; then
+    echo "OK: $TARGET_DATA"
+  else
+    echo "ERROR: missing $TARGET_DATA" >&2
+    ok=0
+  fi
+  if [[ $ok -eq 1 ]]; then
     exit 0
   fi
-  echo "ERROR: missing $TARGET_SO — run: scripts/fetch_native_libs.sh install --artifact" >&2
+  echo "Run: scripts/fetch_native_libs.sh install --artifact" >&2
   exit 1
 }
 

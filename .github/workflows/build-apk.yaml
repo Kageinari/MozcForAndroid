@@ -30,7 +30,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Fetch libmozc.so
+      - name: Fetch native libs and mozc.data
         env:
           GH_TOKEN: ${{ secrets.MOZC_ARTIFACT_TOKEN }}
         run: |
@@ -65,7 +65,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Fetch libmozc.so
+      - name: Fetch native libs and mozc.data
         env:
           GH_TOKEN: ${{ secrets.MOZC_ARTIFACT_TOKEN }}
         run: |

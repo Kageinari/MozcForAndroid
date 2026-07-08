@@ -77,8 +77,9 @@ class LocalSessionHandler implements SessionHandler {
         throw new RuntimeException("Invalid version name: " + versionName);
       }
 
-      // Load the shared object.
-      MozcJNI.load(userProfileDirectory.getAbsolutePath(), null, matcher.group(1));
+      // Install dictionary data from assets and load the shared object.
+      String dataFilePath = MozcDataInstaller.ensureDataFile(context);
+      MozcJNI.load(userProfileDirectory.getAbsolutePath(), dataFilePath, matcher.group(1));
     } catch (NameNotFoundException e) {
       throw new RuntimeException(e);
     }
