@@ -86,13 +86,6 @@ public final class EdgeToEdgeUtil {
    * again. See {@code ThemedNavBarKeyboard} sample in AOSP.
    */
   public static void applyImeNavigationBarInsets(View inputView) {
-    applyImeNavigationBarInsets(inputView, null);
-  }
-
-  /**
-   * @param onInsetsApplied optional callback invoked after bottom padding is updated
-   */
-  public static void applyImeNavigationBarInsets(View inputView, Runnable onInsetsApplied) {
     if (inputView == null) {
       return;
     }
@@ -106,8 +99,8 @@ public final class EdgeToEdgeUtil {
               view.getPaddingTop(),
               view.getPaddingRight(),
               navInsets.bottom);
-          if (onInsetsApplied != null && previousBottomPadding != navInsets.bottom) {
-            view.post(onInsetsApplied);
+          if (previousBottomPadding != navInsets.bottom) {
+            view.requestLayout();
           }
           return windowInsets.inset(0, 0, 0, navInsets.bottom);
         });
