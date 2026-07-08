@@ -147,13 +147,7 @@ def install_member(archive: zipfile.ZipFile, member: str, dest: pathlib.Path) ->
 try:
     with open_native_archive(zip_path) as archive:
         install_member(archive, so_path, target_so)
-        try:
-            install_member(archive, data_path, target_data)
-        except KeyError:
-            if target_data.exists():
-                target_data.unlink()
-            print(f"WARNING: {data_path} not found in {zip_path}; mozc.data was not installed",
-                  file=sys.stderr)
+        install_member(archive, data_path, target_data)
 except (KeyError, zipfile.BadZipFile) as exc:
     print(f"ERROR: native artifacts not found in {zip_path} (or nested {artifact_name}): {exc}",
           file=sys.stderr)
