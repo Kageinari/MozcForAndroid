@@ -221,6 +221,7 @@ public class MozcView extends FrameLayout implements MemoryManageable {
   private Skin skin = Skin.getFallbackInstance();
   @VisibleForTesting LayoutAdjustment layoutAdjustment = LayoutAdjustment.FILL;
   private int inputFrameHeight = 0;
+  private int navigationBarBottomInset = 0;
   @VisibleForTesting int imeWindowHeight = 0;
   @VisibleForTesting int symbolInputViewHeight = 0;
   @VisibleForTesting Animation symbolInputViewInAnimation;
@@ -774,8 +775,16 @@ public class MozcView extends FrameLayout implements MemoryManageable {
   /**
    * This function is called to compute insets.
    */
+  void setNavigationBarBottomInset(int inset) {
+    navigationBarBottomInset = inset;
+  }
+
+  int getNavigationBarBottomInset() {
+    return navigationBarBottomInset;
+  }
+
   public void setInsets(int contentViewWidth, int contentViewHeight, Insets outInsets) {
-    int navigationBarHeight = getPaddingBottom();
+    int navigationBarHeight = navigationBarBottomInset;
     if (!isFloatingMode()) {
       outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_CONTENT;
       outInsets.contentTopInsets =

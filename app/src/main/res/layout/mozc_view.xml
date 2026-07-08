@@ -87,6 +87,7 @@ MozcView(Frame)
     android:visibility="gone" >
 
     <LinearLayout
+        android:id="@+id/keyboard_container"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"

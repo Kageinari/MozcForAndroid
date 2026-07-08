@@ -788,7 +788,6 @@ public class MozcBaseService extends InputMethodService {
   @Override
   public View onCreateInputView() {
     MozcLog.d("start MozcService#onCreateInputView " + System.nanoTime());
-    EdgeToEdgeUtil.enable(getWindow().getWindow());
     View inputView = viewManager.createMozcView(this);
     EdgeToEdgeUtil.applyImeNavigationBarInsets(inputView);
     MozcLog.d("end MozcService#onCreateInputView " + System.nanoTime());

@@ -32,6 +32,7 @@ package org.mozc.android.inputmethod.japanese;
 import android.app.Activity;
 import android.os.Build;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 
 import androidx.core.graphics.Insets;
@@ -80,9 +81,13 @@ public final class EdgeToEdgeUtil {
   }
 
   /**
-   * Applies navigation bar inset as bottom padding on the IME input view.
+   * Applies bottom inset as margin on the IME keyboard container.
    *
-   * <p>The bottom inset is consumed after applying padding so the framework does not apply it
+   * <p>Gesture navigation often reports a small {@code navigationBars} inset while still
+   * obscuring a larger area at the bottom of the screen. The inset therefore uses the maximum
+   * of navigation bar, tappable element, and mandatory system gesture insets.
+   *
+   * <p>The bottom inset is consumed after applying margin so the framework does not apply it
    * again. See {@code ThemedNavBarKeyboard} sample in AOSP.
    */
   public static void applyImeNavigationBarInsets(View inputView) {
@@ -91,31 +96,67 @@ public final class EdgeToEdgeUtil {
     }
     ViewCompat.setOnApplyWindowInsetsListener(inputView,
         (view, windowInsets) -> {
-          Insets navInsets = windowInsets.getInsets(
-              WindowInsetsCompat.Type.navigationBars());
-          int previousBottomPadding = view.getPaddingBottom();
-          view.setPadding(
-              view.getPaddingLeft(),
-              view.getPaddingTop(),
-              view.getPaddingRight(),
-              navInsets.bottom);
-          if (previousBottomPadding != navInsets.bottom) {
-            view.requestLayout();
-          }
-          return windowInsets.inset(0, 0, 0, navInsets.bottom);
+          int bottomInset = getImeBottomInset(windowInsets);
+          applyImeBottomInset(view, bottomInset);
+          return windowInsets.inset(0, 0, 0, bottomInset);
         });
     ViewCompat.requestApplyInsets(inputView);
   }
 
-  /** Returns the bottom navigation bar inset for {@code view}, or 0 if unavailable. */
+  /** Returns the bottom inset for {@code view}, or 0 if unavailable. */
   public static int getNavigationBarBottomInset(View view) {
     if (view == null) {
       return 0;
     }
     WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(view);
-    if (insets == null) {
+    return getImeBottomInset(insets);
+  }
+
+  private static int getImeBottomInset(WindowInsetsCompat windowInsets) {
+    if (windowInsets == null) {
       return 0;
     }
-    return insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+    int bottom = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+    bottom = Math.max(
+        bottom, windowInsets.getInsets(WindowInsetsCompat.Type.tappableElement()).bottom);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      bottom = Math.max(
+          bottom,
+          windowInsets.getInsets(WindowInsetsCompat.Type.mandatorySystemGestures()).bottom);
+    }
+    return bottom;
+  }
+
+  private static void applyImeBottomInset(View inputView, int bottomInset) {
+    int previousBottomInset = 0;
+    if (inputView instanceof MozcView) {
+      previousBottomInset = ((MozcView) inputView).getNavigationBarBottomInset();
+      ((MozcView) inputView).setNavigationBarBottomInset(bottomInset);
+    }
+
+    View keyboardContainer = inputView.findViewById(R.id.keyboard_container);
+    if (keyboardContainer != null) {
+      ViewGroup.LayoutParams layoutParams = keyboardContainer.getLayoutParams();
+      if (layoutParams instanceof ViewGroup.MarginLayoutParams) {
+        ViewGroup.MarginLayoutParams marginLayoutParams =
+            (ViewGroup.MarginLayoutParams) layoutParams;
+        if (marginLayoutParams.bottomMargin != bottomInset) {
+          marginLayoutParams.bottomMargin = bottomInset;
+          keyboardContainer.setLayoutParams(marginLayoutParams);
+        }
+      }
+    }
+
+    if (inputView.getPaddingBottom() != 0) {
+      inputView.setPadding(
+          inputView.getPaddingLeft(),
+          inputView.getPaddingTop(),
+          inputView.getPaddingRight(),
+          0);
+    }
+
+    if (previousBottomInset != bottomInset) {
+      inputView.requestLayout();
+    }
   }
 }
