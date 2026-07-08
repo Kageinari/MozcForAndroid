@@ -50,7 +50,14 @@ public final class EdgeToEdgeUtil {
     if (activity == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
       return;
     }
-    Window window = activity.getWindow();
+    enable(activity.getWindow());
+  }
+
+  /** Enables drawing behind system bars for an IME or other {@link Window}. */
+  public static void enable(Window window) {
+    if (window == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+      return;
+    }
     WindowCompat.setDecorFitsSystemWindows(window, false);
   }
 
@@ -74,8 +81,18 @@ public final class EdgeToEdgeUtil {
 
   /**
    * Applies navigation bar inset as bottom padding on the IME input view.
+   *
+   * <p>The bottom inset is consumed after applying padding so the framework does not apply it
+   * again. See {@code ThemedNavBarKeyboard} sample in AOSP.
    */
   public static void applyImeNavigationBarInsets(View inputView) {
+    applyImeNavigationBarInsets(inputView, null);
+  }
+
+  /**
+   * @param onInsetsApplied optional callback invoked after bottom padding is updated
+   */
+  public static void applyImeNavigationBarInsets(View inputView, Runnable onInsetsApplied) {
     if (inputView == null) {
       return;
     }
@@ -83,12 +100,16 @@ public final class EdgeToEdgeUtil {
         (view, windowInsets) -> {
           Insets navInsets = windowInsets.getInsets(
               WindowInsetsCompat.Type.navigationBars());
+          int previousBottomPadding = view.getPaddingBottom();
           view.setPadding(
               view.getPaddingLeft(),
               view.getPaddingTop(),
               view.getPaddingRight(),
               navInsets.bottom);
-          return windowInsets;
+          if (onInsetsApplied != null && previousBottomPadding != navInsets.bottom) {
+            view.post(onInsetsApplied);
+          }
+          return windowInsets.inset(0, 0, 0, navInsets.bottom);
         });
     ViewCompat.requestApplyInsets(inputView);
   }
