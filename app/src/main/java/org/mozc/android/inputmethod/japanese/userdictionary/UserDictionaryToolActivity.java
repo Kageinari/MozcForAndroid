@@ -29,6 +29,7 @@
 
 package org.mozc.android.inputmethod.japanese.userdictionary;
 
+import org.mozc.android.inputmethod.japanese.EdgeToEdgeUtil;
 import org.mozc.android.inputmethod.japanese.MozcLog;
 import org.mozc.android.inputmethod.japanese.MozcUtil;
 import org.mozc.android.inputmethod.japanese.protobuf.ProtoUserDictionaryStorage.UserDictionary.Entry;
@@ -157,6 +158,7 @@ public class UserDictionaryToolActivity extends Activity {
 
   @Override
   protected void onCreate(Bundle savedInstance) {
+    EdgeToEdgeUtil.enable(this);
     super.onCreate(savedInstance);
     toastManager = new ToastManager(this);
 
@@ -169,6 +171,7 @@ public class UserDictionaryToolActivity extends Activity {
 
     // Initialize views.
     setContentView(R.layout.user_dictionary_tool_view);
+    EdgeToEdgeUtil.applySystemBarInsets(findViewById(android.R.id.content));
     initializeDictionaryNameSpinner();
     initializeEntryListView();
 

@@ -169,7 +169,8 @@ public class UserDictionaryToolModel {
     // Read new dictionary list.
     {
       Status updateStatus = updateStorage();
-      if (updateStatus == Status.USER_DICTIONARY_COMMAND_SUCCESS) {
+      if (updateStatus == Status.USER_DICTIONARY_COMMAND_SUCCESS
+          && storage.getDictionariesCount() > 0) {
         selectedDictionaryId = storage.getDictionaries(0).getId();
       }
     }
@@ -412,8 +413,12 @@ public class UserDictionaryToolModel {
       if (updateStatus != Status.USER_DICTIONARY_COMMAND_SUCCESS) {
         return updateStatus;
       }
-      selectedDictionaryId =
-          storage.getDictionaries(Math.min(index, storage.getDictionariesCount() - 1)).getId();
+      if (storage.getDictionariesCount() > 0) {
+        selectedDictionaryId =
+            storage.getDictionaries(Math.min(index, storage.getDictionariesCount() - 1)).getId();
+      } else {
+        selectedDictionaryId = 0;
+      }
     }
     return status.getStatus();
   }

@@ -90,6 +90,7 @@ public class FirstTimeLaunchActivity extends Activity {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    EdgeToEdgeUtil.enable(this);
     super.onCreate(savedInstanceState);
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -100,6 +101,7 @@ public class FirstTimeLaunchActivity extends Activity {
   void initializeContentView(boolean sendingInformationFeaturesEnabled,
                              SharedPreferences sharedPreferences) {
     setContentView(R.layout.first_time_launch);
+    EdgeToEdgeUtil.applySystemBarInsets(findViewById(android.R.id.content));
 
     // Fill strings, which needs replacement.
     Resources resources = getResources();

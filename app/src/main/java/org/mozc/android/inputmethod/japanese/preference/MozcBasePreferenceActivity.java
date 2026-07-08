@@ -32,6 +32,7 @@ package org.mozc.android.inputmethod.japanese.preference;
 import org.mozc.android.inputmethod.japanese.ApplicationInitializerFactory;
 import org.mozc.android.inputmethod.japanese.ApplicationInitializerFactory.ApplicationInitializer;
 import org.mozc.android.inputmethod.japanese.DependencyFactory;
+import org.mozc.android.inputmethod.japanese.EdgeToEdgeUtil;
 import org.mozc.android.inputmethod.japanese.MozcUtil;
 import org.mozc.android.inputmethod.japanese.hardwarekeyboard.HardwareKeyboardSpecification;
 import org.mozc.android.inputmethod.japanese.preference.KeyboardPreviewDrawable.BitmapCache;
@@ -52,6 +53,7 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
+import android.view.View;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 
@@ -134,9 +136,22 @@ public class MozcBasePreferenceActivity extends PreferenceActivity {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    EdgeToEdgeUtil.enable(this);
     super.onCreate(savedInstanceState);
     sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
     initializeAlertDialog();
+  }
+
+  @Override
+  public void setContentView(int layoutResID) {
+    super.setContentView(layoutResID);
+    EdgeToEdgeUtil.applySystemBarInsets(findViewById(android.R.id.content));
+  }
+
+  @Override
+  public void setContentView(View view) {
+    super.setContentView(view);
+    EdgeToEdgeUtil.applySystemBarInsets(findViewById(android.R.id.content));
   }
 
   @Override
