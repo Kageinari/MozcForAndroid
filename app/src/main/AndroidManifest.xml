@@ -31,7 +31,7 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     android:versionCode="6028153"
-          android:versionName="2.23.2815.103-arm64">
+          android:versionName="3.33.6133.103-arm64">
 
   <!-- Google Japanese Input (the main code) requires the following permissions. -->
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
