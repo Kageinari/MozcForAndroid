@@ -30,6 +30,9 @@
 package org.mozc.android.inputmethod.japanese;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.res.Resources;
+import android.inputmethodservice.InputMethodService;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
@@ -83,48 +86,106 @@ public final class EdgeToEdgeUtil {
   /**
    * Applies bottom inset as margin on the IME keyboard container.
    *
-   * <p>Gesture navigation often reports a small {@code navigationBars} inset while still
-   * obscuring a larger area at the bottom of the screen. The inset therefore uses the maximum
-   * of navigation bar, tappable element, and mandatory system gesture insets.
-   *
-   * <p>The bottom inset is consumed after applying margin so the framework does not apply it
-   * again. See {@code ThemedNavBarKeyboard} sample in AOSP.
+   * <p>Insets are read from both the IME decor view and the input view because some devices do not
+   * dispatch usable insets to the input view alone. When insets are still unavailable, a system
+   * resource fallback is used so gesture navigation does not clip the bottom keyboard row.
    */
-  public static void applyImeNavigationBarInsets(View inputView) {
-    if (inputView == null) {
+  public static void applyImeNavigationBarInsets(InputMethodService service, View inputView) {
+    if (service == null || inputView == null) {
       return;
     }
+    Context context = service.getApplicationContext();
+    View decorView = service.getWindow().getWindow().getDecorView();
+
+    ViewCompat.setOnApplyWindowInsetsListener(decorView,
+        (view, windowInsets) -> {
+          applyImeBottomInset(inputView, getImeBottomInset(context, windowInsets));
+          return windowInsets;
+        });
     ViewCompat.setOnApplyWindowInsetsListener(inputView,
         (view, windowInsets) -> {
-          int bottomInset = getImeBottomInset(windowInsets);
-          applyImeBottomInset(view, bottomInset);
+          int bottomInset = getImeBottomInset(context, windowInsets);
+          applyImeBottomInset(inputView, bottomInset);
           return windowInsets.inset(0, 0, 0, bottomInset);
         });
+
+    refreshImeNavigationBarInsets(service, inputView);
+  }
+
+  /** Re-reads insets and reapplies the keyboard bottom offset. */
+  public static void refreshImeNavigationBarInsets(InputMethodService service, View inputView) {
+    if (service == null || inputView == null) {
+      return;
+    }
+    Context context = service.getApplicationContext();
+    View decorView = service.getWindow().getWindow().getDecorView();
+    ViewCompat.requestApplyInsets(decorView);
     ViewCompat.requestApplyInsets(inputView);
+    applyImeBottomInset(inputView, getNavigationBarBottomInset(context, decorView, inputView));
   }
 
   /** Returns the bottom inset for {@code view}, or 0 if unavailable. */
   public static int getNavigationBarBottomInset(View view) {
-    if (view == null) {
-      return 0;
-    }
-    WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(view);
-    return getImeBottomInset(insets);
+    return getNavigationBarBottomInset(view != null ? view.getContext() : null, view);
   }
 
-  private static int getImeBottomInset(WindowInsetsCompat windowInsets) {
-    if (windowInsets == null) {
-      return 0;
+  /** Returns the bottom inset using {@code context} and the best available inset source. */
+  public static int getNavigationBarBottomInset(Context context, View... views) {
+    int bottom = 0;
+    if (views != null) {
+      for (View view : views) {
+        if (view == null) {
+          continue;
+        }
+        WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(view);
+        bottom = Math.max(bottom, getImeBottomInset(context, insets));
+        if (bottom > 0) {
+          break;
+        }
+      }
     }
-    int bottom = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
-    bottom = Math.max(
-        bottom, windowInsets.getInsets(WindowInsetsCompat.Type.tappableElement()).bottom);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      bottom = Math.max(
-          bottom,
-          windowInsets.getInsets(WindowInsetsCompat.Type.mandatorySystemGestures()).bottom);
+    if (bottom == 0 && context != null) {
+      bottom = getFallbackNavigationBarHeight(context);
     }
     return bottom;
+  }
+
+  private static int getImeBottomInset(Context context, WindowInsetsCompat windowInsets) {
+    int bottom = 0;
+    if (windowInsets != null) {
+      bottom = Math.max(
+          bottom, windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom);
+      bottom = Math.max(
+          bottom, windowInsets.getInsets(WindowInsetsCompat.Type.tappableElement()).bottom);
+      bottom = Math.max(
+          bottom, windowInsets.getInsets(WindowInsetsCompat.Type.systemGestures()).bottom);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        bottom = Math.max(
+            bottom,
+            windowInsets.getInsets(WindowInsetsCompat.Type.mandatorySystemGestures()).bottom);
+      }
+    }
+    if (bottom == 0 && context != null) {
+      bottom = getFallbackNavigationBarHeight(context);
+    }
+    return bottom;
+  }
+
+  private static int getFallbackNavigationBarHeight(Context context) {
+    Resources system = Resources.getSystem();
+    int height = 0;
+    height = Math.max(height, getSystemDimen(system, "navigation_bar_height"));
+    height = Math.max(height, getSystemDimen(system, "navigation_bar_gesture_height"));
+    height = Math.max(height, getSystemDimen(system, "navigation_bar_frame_height"));
+    if (height == 0) {
+      height = (int) (48 * context.getResources().getDisplayMetrics().density);
+    }
+    return height;
+  }
+
+  private static int getSystemDimen(Resources resources, String name) {
+    int resourceId = resources.getIdentifier(name, "dimen", "android");
+    return resourceId > 0 ? resources.getDimensionPixelSize(resourceId) : 0;
   }
 
   private static void applyImeBottomInset(View inputView, int bottomInset) {

@@ -481,6 +481,11 @@ public class ViewManager implements ViewManagerInterface {
    * @param context
    * @return newly created view.
    */
+  @Nullable
+  public MozcView getMozcView() {
+    return mozcView;
+  }
+
   @Override
   public MozcView createMozcView(Context context) {
     mozcView = MozcView.class.cast(LayoutInflater.from(context).inflate(R.layout.mozc_view, null));
@@ -1014,8 +1019,9 @@ public class ViewManager implements ViewManagerInterface {
     int contentViewWidth = contentView.getWidth();
     int contentViewHeight = contentView.getHeight();
     int navigationBarHeight = mozcView != null
+        && mozcView.getNavigationBarBottomInset() > 0
         ? mozcView.getNavigationBarBottomInset()
-        : EdgeToEdgeUtil.getNavigationBarBottomInset(contentView);
+        : EdgeToEdgeUtil.getNavigationBarBottomInset(context, contentView);
 
     if (mozcView == null) {
       outInsets.touchableInsets = InputMethodService.Insets.TOUCHABLE_INSETS_CONTENT;

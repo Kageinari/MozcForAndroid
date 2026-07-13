@@ -789,7 +789,7 @@ public class MozcBaseService extends InputMethodService {
   public View onCreateInputView() {
     MozcLog.d("start MozcService#onCreateInputView " + System.nanoTime());
     View inputView = viewManager.createMozcView(this);
-    EdgeToEdgeUtil.applyImeNavigationBarInsets(inputView);
+    EdgeToEdgeUtil.applyImeNavigationBarInsets(this, inputView);
     MozcLog.d("end MozcService#onCreateInputView " + System.nanoTime());
     return inputView;
   }
@@ -942,6 +942,10 @@ public class MozcBaseService extends InputMethodService {
     // the view might be created after onStartInput with *reset* status.
     viewManager.updateGlobeButtonEnabled();
     viewManager.updateMicrophoneButtonEnabled();
+    MozcView inputView = viewManager.getMozcView();
+    if (inputView != null) {
+      EdgeToEdgeUtil.refreshImeNavigationBarInsets(this, inputView);
+    }
 
     // Should reset the window animation since the order of onStartInputView() / onFinishInput() is
     // not stable.
@@ -1196,6 +1200,10 @@ public class MozcBaseService extends InputMethodService {
 
   @Override
   public void onWindowShown() {
+    MozcView inputView = viewManager != null ? viewManager.getMozcView() : null;
+    if (inputView != null) {
+      EdgeToEdgeUtil.refreshImeNavigationBarInsets(this, inputView);
+    }
     showStatusIcon();
     // Remove memory trimming message.
     memoryTrimmingHandler.removeMessages(MemoryTrimmingHandler.WHAT);
