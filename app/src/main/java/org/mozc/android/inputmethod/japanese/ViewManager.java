@@ -1027,7 +1027,7 @@ public class ViewManager implements ViewManagerInterface {
       return;
     }
 
-    mozcView.setInsets(contentViewWidth, contentViewHeight, outInsets);
+    mozcView.setInsets(contentViewWidth, contentViewHeight, contentView, outInsets);
   }
 
   @Override

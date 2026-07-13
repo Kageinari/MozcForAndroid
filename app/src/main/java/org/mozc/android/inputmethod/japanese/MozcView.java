@@ -783,23 +783,41 @@ public class MozcView extends FrameLayout implements MemoryManageable {
     return navigationBarBottomInset;
   }
 
-  public void setInsets(int contentViewWidth, int contentViewHeight, Insets outInsets) {
+  public void setInsets(
+      int contentViewWidth, int contentViewHeight, View contentView, Insets outInsets) {
     if (!isFloatingMode()) {
       outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_CONTENT;
-      outInsets.contentTopInsets = contentViewHeight - getVisibleViewHeight();
+      outInsets.contentTopInsets = computeContentTopInsets(contentView, contentViewHeight);
       outInsets.visibleTopInsets = outInsets.contentTopInsets;
       return;
     }
     int height = getVisibleViewHeight();
     int width = getSideAdjustedWidth();
     int left = layoutAdjustment == LayoutAdjustment.RIGHT ? (contentViewWidth - width) : 0;
+    int top = computeContentTopInsets(contentView, contentViewHeight);
+    int bottom = top + height;
 
     outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_REGION;
-    outInsets.touchableRegion.set(
-        left, contentViewHeight - height, left + width, contentViewHeight);
+    outInsets.touchableRegion.set(left, top, left + width, bottom);
     outInsets.contentTopInsets = contentViewHeight;
     outInsets.visibleTopInsets = contentViewHeight;
     return;
+  }
+
+  private int computeContentTopInsets(View contentView, int contentViewHeight) {
+    View bottomFrame = getBottomFrame();
+    if (bottomFrame == null || contentView == null || bottomFrame.getHeight() <= 0) {
+      return Math.max(0, contentViewHeight - getVisibleViewHeight());
+    }
+    int[] keyboardLoc = new int[2];
+    int[] contentLoc = new int[2];
+    bottomFrame.getLocationInWindow(keyboardLoc);
+    contentView.getLocationInWindow(contentLoc);
+    int top = keyboardLoc[1] - contentLoc[1];
+    if (top < 0 || top > contentViewHeight) {
+      return Math.max(0, contentViewHeight - getVisibleViewHeight());
+    }
+    return top;
   }
 
   @VisibleForTesting
