@@ -195,29 +195,59 @@ public final class EdgeToEdgeUtil {
       ((MozcView) inputView).setNavigationBarBottomInset(bottomInset);
     }
 
-    View keyboardContainer = inputView.findViewById(R.id.keyboard_container);
-    if (keyboardContainer != null) {
-      ViewGroup.LayoutParams layoutParams = keyboardContainer.getLayoutParams();
-      if (layoutParams instanceof ViewGroup.MarginLayoutParams) {
-        ViewGroup.MarginLayoutParams marginLayoutParams =
-            (ViewGroup.MarginLayoutParams) layoutParams;
-        if (marginLayoutParams.bottomMargin != bottomInset) {
-          marginLayoutParams.bottomMargin = bottomInset;
-          keyboardContainer.setLayoutParams(marginLayoutParams);
-        }
-      }
-    }
+    clearKeyboardContainerBottomMargin(inputView);
 
-    if (inputView.getPaddingBottom() != 0) {
+    boolean paddingChanged = inputView.getPaddingBottom() != bottomInset;
+    if (paddingChanged) {
       inputView.setPadding(
           inputView.getPaddingLeft(),
           inputView.getPaddingTop(),
           inputView.getPaddingRight(),
-          0);
+          bottomInset);
     }
 
-    if (previousBottomInset != bottomInset) {
+    if (previousBottomInset != bottomInset || paddingChanged) {
       inputView.requestLayout();
+      scheduleInsetsRefreshAfterLayout(inputView);
     }
+  }
+
+  /** Clears legacy bottom margin so only root padding lifts the keyboard. */
+  private static void clearKeyboardContainerBottomMargin(View inputView) {
+    View keyboardContainer = inputView.findViewById(R.id.keyboard_container);
+    if (keyboardContainer == null) {
+      return;
+    }
+    ViewGroup.LayoutParams layoutParams = keyboardContainer.getLayoutParams();
+    if (layoutParams instanceof ViewGroup.MarginLayoutParams) {
+      ViewGroup.MarginLayoutParams marginLayoutParams =
+          (ViewGroup.MarginLayoutParams) layoutParams;
+      if (marginLayoutParams.bottomMargin != 0) {
+        marginLayoutParams.bottomMargin = 0;
+        keyboardContainer.setLayoutParams(marginLayoutParams);
+      }
+    }
+  }
+
+  /**
+   * Re-runs {@code onComputeInsets} after the next layout pass so inset values reflect the lifted
+   * keyboard position instead of a stale pre-layout fallback.
+   */
+  public static void scheduleInsetsRefreshAfterLayout(View inputView) {
+    if (inputView == null) {
+      return;
+    }
+    View root = inputView.getRootView();
+    if (root == null) {
+      return;
+    }
+    root.getViewTreeObserver().addOnGlobalLayoutListener(
+        new android.view.ViewTreeObserver.OnGlobalLayoutListener() {
+          @Override
+          public void onGlobalLayout() {
+            root.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+            root.requestLayout();
+          }
+        });
   }
 }

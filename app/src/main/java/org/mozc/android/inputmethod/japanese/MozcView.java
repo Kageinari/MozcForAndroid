@@ -805,19 +805,40 @@ public class MozcView extends FrameLayout implements MemoryManageable {
   }
 
   private int computeContentTopInsets(View contentView, int contentViewHeight) {
-    View bottomFrame = getBottomFrame();
-    if (bottomFrame == null || contentView == null || bottomFrame.getHeight() <= 0) {
-      return Math.max(0, contentViewHeight - getVisibleViewHeight());
+    int measuredTop = measureContentTopInsetsFromWindow();
+    if (measuredTop >= 0) {
+      return measuredTop;
     }
-    int[] keyboardLoc = new int[2];
-    int[] contentLoc = new int[2];
-    bottomFrame.getLocationInWindow(keyboardLoc);
-    contentView.getLocationInWindow(contentLoc);
-    int top = keyboardLoc[1] - contentLoc[1];
-    if (top < 0 || top > contentViewHeight) {
-      return Math.max(0, contentViewHeight - getVisibleViewHeight());
+    return Math.max(
+        0, contentViewHeight - getVisibleViewHeight() - navigationBarBottomInset);
+  }
+
+  /**
+   * Returns the top inset using window coordinates, matching AOSP {@code InputMethodService}.
+   */
+  private int measureContentTopInsetsFromWindow() {
+    View root = getRootView();
+    if (root == null) {
+      return -1;
     }
-    return top;
+    int top = measureViewTopInsetInWindow(root.findViewById(android.R.id.inputArea));
+    if (top >= 0) {
+      return top;
+    }
+    top = measureViewTopInsetInWindow(findViewById(R.id.keyboard_container));
+    if (top >= 0) {
+      return top;
+    }
+    return measureViewTopInsetInWindow(getBottomFrame());
+  }
+
+  private static int measureViewTopInsetInWindow(View view) {
+    if (view == null || view.getVisibility() != View.VISIBLE || view.getHeight() <= 0) {
+      return -1;
+    }
+    int[] location = new int[2];
+    view.getLocationInWindow(location);
+    return location[1] >= 0 ? location[1] : -1;
   }
 
   @VisibleForTesting

@@ -945,6 +945,7 @@ public class MozcBaseService extends InputMethodService {
     MozcView inputView = viewManager.getMozcView();
     if (inputView != null) {
       EdgeToEdgeUtil.refreshImeNavigationBarInsets(this, inputView);
+      EdgeToEdgeUtil.scheduleInsetsRefreshAfterLayout(inputView);
     }
 
     // Should reset the window animation since the order of onStartInputView() / onFinishInput() is
@@ -1203,6 +1204,7 @@ public class MozcBaseService extends InputMethodService {
     MozcView inputView = viewManager != null ? viewManager.getMozcView() : null;
     if (inputView != null) {
       EdgeToEdgeUtil.refreshImeNavigationBarInsets(this, inputView);
+      EdgeToEdgeUtil.scheduleInsetsRefreshAfterLayout(inputView);
     }
     showStatusIcon();
     // Remove memory trimming message.
