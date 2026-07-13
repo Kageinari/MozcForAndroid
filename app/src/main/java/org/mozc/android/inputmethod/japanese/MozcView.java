@@ -784,11 +784,9 @@ public class MozcView extends FrameLayout implements MemoryManageable {
   }
 
   public void setInsets(int contentViewWidth, int contentViewHeight, Insets outInsets) {
-    int navigationBarHeight = navigationBarBottomInset;
     if (!isFloatingMode()) {
       outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_CONTENT;
-      outInsets.contentTopInsets =
-          contentViewHeight - getVisibleViewHeight() - navigationBarHeight;
+      outInsets.contentTopInsets = contentViewHeight - getVisibleViewHeight();
       outInsets.visibleTopInsets = outInsets.contentTopInsets;
       return;
     }
@@ -798,8 +796,7 @@ public class MozcView extends FrameLayout implements MemoryManageable {
 
     outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_REGION;
     outInsets.touchableRegion.set(
-        left, contentViewHeight - height - navigationBarHeight,
-        left + width, contentViewHeight - navigationBarHeight);
+        left, contentViewHeight - height, left + width, contentViewHeight);
     outInsets.contentTopInsets = contentViewHeight;
     outInsets.visibleTopInsets = contentViewHeight;
     return;

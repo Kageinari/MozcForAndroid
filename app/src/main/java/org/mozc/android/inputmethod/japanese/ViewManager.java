@@ -1018,14 +1018,10 @@ public class ViewManager implements ViewManagerInterface {
     View contentView = window.findViewById(Window.ID_ANDROID_CONTENT);
     int contentViewWidth = contentView.getWidth();
     int contentViewHeight = contentView.getHeight();
-    int navigationBarHeight = mozcView != null
-        && mozcView.getNavigationBarBottomInset() > 0
-        ? mozcView.getNavigationBarBottomInset()
-        : EdgeToEdgeUtil.getNavigationBarBottomInset(context, contentView);
 
     if (mozcView == null) {
       outInsets.touchableInsets = InputMethodService.Insets.TOUCHABLE_INSETS_CONTENT;
-      outInsets.contentTopInsets = contentViewHeight - navigationBarHeight
+      outInsets.contentTopInsets = contentViewHeight
           - context.getResources().getDimensionPixelSize(R.dimen.input_frame_height);
       outInsets.visibleTopInsets = outInsets.contentTopInsets;
       return;
