@@ -52,6 +52,8 @@ import android.view.View;
 import android.view.Window;
 import android.view.inputmethod.EditorInfo;
 
+import javax.annotation.Nullable;
+
 /**
  * Interface for ViewManager which manages Input, Candidate and Extracted views.
  *
@@ -78,6 +80,10 @@ public interface ViewManagerInterface extends MemoryManageable {
    * @return newly created view.
    */
   public View createMozcView(Context context);
+
+  /** Returns the current input view, or {@code null} if it has not been created yet. */
+  @Nullable
+  public MozcView getMozcView();
 
   /**
    * Renders views which this instance own based on Command.Output.
